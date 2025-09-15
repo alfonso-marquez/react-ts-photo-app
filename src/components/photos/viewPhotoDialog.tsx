@@ -13,7 +13,7 @@ import type { Photo } from "../../types/photo";
 import { useState } from "react";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
-import { STORAGE_BASE } from "@/services/storage";
+import { getPhotoUrl } from "@/helper/getPhotoUrl";
 
 interface ViewPhotoDialogProps {
     photo: Photo;
@@ -36,7 +36,11 @@ export default function ViewPhotoDialog({ photo }: ViewPhotoDialogProps) {
 
                 {photo.photo_path && (
                     <div>
-                        <img src={`${STORAGE_BASE}/${photo.photo_path}`} alt={photo.title} className="mt-2 w-full max-h-100 object-cover rounded-md" />
+                        <img
+                            src={getPhotoUrl(photo.photo_path)}
+                            alt={photo.title}
+                            className="mt-2 w-full max-h-100 object-cover rounded-md"
+                        />
                     </div>
                 )}
                 <div>

@@ -22,9 +22,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { CalendarIcon } from "lucide-react";
 import { Calendar } from "../ui/calendar";
-import { format, set } from "date-fns";
-import { STORAGE_BASE } from "@/services/storage";
-import { PHOTO_API, updatePhotoApi } from "@/services/api";
+import { format } from "date-fns";
+import { updatePhotoApi } from "@/services/api";
+import { getPhotoUrl } from "@/helper/getPhotoUrl";
 
 interface EditPhotoDialogProps {
     photo: Photo;
@@ -34,7 +34,7 @@ interface EditPhotoDialogProps {
 export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [preview, setPreview] = useState<string | undefined>(photo.photo_path ? `${STORAGE_BASE}/${photo.photo_path}` : undefined);
+    const [preview, setPreview] = useState<string | undefined>(photo.photo_path ? getPhotoUrl(photo.photo_path) : undefined);
 
     const noFutureDateString = z.string().refine(
         (val) => new Date(val) <= new Date(),
@@ -126,7 +126,7 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
             </DialogHeader>
             {preview && (
                 <img
-                    src={preview}
+                    src={getPhotoUrl(preview)}
                     alt={photo.title}
                     className="mt-2 w-full max-h-100 object-cover rounded-md"
                 />

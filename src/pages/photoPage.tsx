@@ -7,7 +7,7 @@ import DeletePhotoDialog from "@/components/photos/deletePhotoDialog";
 import PaginationPhoto from "@/components/photos/paginationPhoto";
 import SearchBar from "@/components/photos/searchBarPhoto";
 import ViewPhotoDialog from "@/components/photos/viewPhotoDialog";
-import { set } from "date-fns";
+import { getPhotoUrl } from "@/helper/getPhotoUrl";
 
 export default function PhotosPage() {
 
@@ -82,7 +82,8 @@ export default function PhotosPage() {
                                     {photo.photo_path ?
                                         <img
                                             className="w-24 h-24 object-cover rounded-md"
-                                            src={`http://127.0.0.1:8000/storage/${photo.photo_path}`}
+                                            // src={`http://127.0.0.1:8000/storage/${photo.photo_path}`}
+                                            src={getPhotoUrl(photo.photo_path)}
                                             alt={photo.title}
                                             onError={(e) => {
                                                 (e.currentTarget as HTMLImageElement).src = "https://placehold.co/600x400.png";
