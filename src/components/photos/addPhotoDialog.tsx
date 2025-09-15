@@ -19,29 +19,48 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+
 
 import { Input } from "@/components/ui/input"
 import { useForm } from "react-hook-form";
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PHOTO_API } from "@/services/api";
-
-
+import { createPhotoApi } from "@/services/api";
 
 import { useState } from "react";
 // import { zodResolver } from "@hookform/resolvers/zod"
 
-import type { Photo } from "../types/photo";
+import type { Photo } from "../../types/photo";
+import { Textarea } from "../ui/textarea";
 
+
+const noFutureDateString = z.string().refine(
+    (val) => new Date(val) <= new Date(),
+    { message: "Date cannot be in the future" }
+);
 
 const formSchema = z.object({
     title: z.string().min(5, { message: "Title must be at least 5 characters" }),
     description: z.any().optional(),
-    cameraBrand: z.string().optional(),
-    gearUsed: z.any().optional(),
+    camera_brand: z.string().optional(),
+    photo_category: z.string().optional(),
+    gear_used: z.any().optional(),
     location: z.any().optional(),
-    photo_taken: z.string().optional(),
-    photo_path: z.file().optional(),
+    photo_taken: noFutureDateString.optional(),
+    photo_path: z.instanceof(File, { message: "An image file is required" })
+        .refine((file) => file.type.startsWith("image/"), {
+            message: "Only image files are allowed (jpg, png)",
+        })
+        .refine((file) => file.size <= 20 * 1024 * 1024, { // for better readability (20MB)
+            message: "File size must be less than or equal to 20MB",
+        })
 })
 
 
@@ -55,92 +74,54 @@ export default function AddPhotoDialog({ setPhotos, fetchPhotos }: AddPhotoDialo
 
     const [loading, setLoading] = useState(false);
     const [open, setOpen] = useState(false);
-    const [date, setDate] = useState<Date>()
+    // const [date, setDate] = useState<Date>()
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             title: "",
             description: "",
-            cameraBrand: "",
-            gearUsed: "",
+            camera_brand: "",
+            gear_used: "",
             location: "",
             photo_taken: undefined,
             photo_path: undefined,
         },
     })
 
-    // const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    //     // Do something with the form values.
-    //     // ✅ This will be type-safe and validated.
-    //     setLoading(true)
-    //     try {
-    //         const payload = {
-    //             ...values
-    //         }
-    //         const res = await fetch(PHOTO_API.create, {
-    //             method: 'POST',
-    //             headers: { 'Content-Type': 'application/json' },
-    //             body: JSON.stringify(payload)
-    //         })
-    //         const data = await res.json()
-    //         console.log(res.status, data)
-    //         if (res.ok) {
-    //             setPhotos((prevPhotos: Photo[]) => [...prevPhotos, data.data]);
-
-    //         } else {
-    //             alert(data.message || 'Failed to create project')
-    //         }
-    //     } catch (error) {
-    //         console.error('Error creating photo:', error)
-    //         alert('An error occurred while creating the photo')
-    //     } finally {
-    //         setLoading(false);
-    //         setOpen(false);
-    //     }
-
-    //     console.log(values)
-    // }
-
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         setLoading(true);
         try {
-            // Create FormData to handle file upload
+            // Build FormData for file + text fields
             const formData = new FormData();
-
-
             formData.append("title", values.title);
             formData.append("description", values.description ?? "");
-            formData.append("camera_brand", values.cameraBrand ?? "");
-            formData.append("gear_used", values.gearUsed ?? "");
+            formData.append("photo_category", values.photo_category ?? "");
+            formData.append("camera_brand", values.camera_brand ?? "");
+            formData.append("gear_used", values.gear_used ?? "");
             formData.append("location", values.location ?? "");
             formData.append("photo_taken", values.photo_taken ?? "");
 
-            // Append the file
             if (values.photo_path) {
                 formData.append("photo_path", values.photo_path);
             }
 
-            const res = await fetch(PHOTO_API.create, {
-                method: "POST",
-                body: formData, // use FormData instead of JSON
-                // Do NOT set Content-Type header; browser handles it
-            });
+            // Call API with error checking
+            const result = await createPhotoApi(formData);
 
-            const data = await res.json();
-            console.log(res.status, data);
-
-            if (res.ok) {
-                // Add new photo to state
-                setPhotos((prevPhotos: Photo[]) => [...prevPhotos, data.data]);
-                await fetchPhotos(1);
-                form.reset();
-            } else {
-                alert(data.message || "Failed to create photo");
+            if (!result.success) {
+                alert(result.message); // show error
+            } else if (result.data && result.data.id) {
+                setPhotos((prevPhotos: Photo[]) => [...prevPhotos, result.data]);
             }
-        } catch (error) {
-            console.error("Error creating photo:", error);
-            alert("An error occurred while creating the photo");
+            // refresh list to show new photo (reset to page 1)
+            await fetchPhotos(1, "");
+
+            form.reset();
+
+        } catch (error: any) {
+            alert(error.message || "An error occurred while creating the photo");
+
         } finally {
             setLoading(false);
             setOpen(false);
@@ -153,14 +134,16 @@ export default function AddPhotoDialog({ setPhotos, fetchPhotos }: AddPhotoDialo
         <DialogTrigger asChild><Button variant="default">Add</Button></DialogTrigger>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Upload Photo</DialogTitle>
+                <DialogTitle>Create Photo</DialogTitle>
                 <DialogDescription>
                     Create and upload a new photo and add to the list.
                 </DialogDescription>
             </DialogHeader>
+
             <Form {...form}>
 
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+
                     <FormField
                         control={form.control}
                         name="title"
@@ -184,7 +167,7 @@ export default function AddPhotoDialog({ setPhotos, fetchPhotos }: AddPhotoDialo
                             <FormItem>
                                 <FormLabel>Description</FormLabel>
                                 <FormControl>
-                                    <textarea {...field} />
+                                    <Textarea  {...field} />
                                 </FormControl>
                                 <FormDescription>
                                     Description of uploaded photo.
@@ -193,25 +176,77 @@ export default function AddPhotoDialog({ setPhotos, fetchPhotos }: AddPhotoDialo
                             </FormItem>
                         )}
                     />
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                        <div >
+                            <FormField
+                                control={form.control}
+                                name="photo_category"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Category</FormLabel>
+                                        <FormControl>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <SelectTrigger className="w-[180px]">
+                                                    <SelectValue placeholder="Event" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Event">Event</SelectItem>
+                                                    <SelectItem value="Landscape">Landscape</SelectItem>
+                                                    <SelectItem value="Portrait">Portrait</SelectItem>
+                                                    <SelectItem value="Street">Street</SelectItem>
+                                                    <SelectItem value="Toy">Toy</SelectItem>
+                                                    <SelectItem value="Travel">Travel</SelectItem>
+                                                    <SelectItem value="Wildlife">Wildlife</SelectItem>
+                                                    <SelectItem value="Other">Other</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </FormControl>
+                                        <FormDescription>
+                                            Select 'Wildlife' if pets ror
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                        </div>
+                        <div>
+                            <FormField
+                                control={form.control}
+                                name="camera_brand"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Camera Brand</FormLabel>
+                                        <FormControl>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <SelectTrigger className="w-[180px]">
+                                                    <SelectValue placeholder="Canon" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Canon">Canon</SelectItem>
+                                                    <SelectItem value="Fujifilm">Fujifilm</SelectItem>
+                                                    <SelectItem value="Leica">Leica</SelectItem>
+                                                    <SelectItem value="Nikon">Nikon</SelectItem>
+                                                    <SelectItem value="Olympus">Olympus</SelectItem>
+                                                    <SelectItem value="Panasonic">Panasonic</SelectItem>
+                                                    <SelectItem value="Sony">Sony</SelectItem>
+                                                    <SelectItem value="Mobile">Mobile</SelectItem>
+                                                    <SelectItem value="Other">Other</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </FormControl>
+                                        <FormDescription>
+                                            Select 'Other' if brand not listed.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                    </div>
                     <FormField
                         control={form.control}
-                        name="cameraBrand"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Camera Brand</FormLabel>
-                                <FormControl>
-                                    <Input {...field} />
-                                </FormControl>
-                                <FormDescription>
-                                    Camera brand. Dropdown! Field selection
-                                </FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="gearUsed"
+                        name="gear_used"
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Gear Used</FormLabel>
@@ -256,7 +291,6 @@ export default function AddPhotoDialog({ setPhotos, fetchPhotos }: AddPhotoDialo
                             </FormItem>
                         )}
                     />
-
                     <FormField
                         control={form.control}
                         name="photo_path"
@@ -274,12 +308,11 @@ export default function AddPhotoDialog({ setPhotos, fetchPhotos }: AddPhotoDialo
                                         }}
                                     />
                                 </FormControl>
-                                <FormDescription>Upload a photo (max 10MB)</FormDescription>
+                                <FormDescription>Upload a photo (max 20MB)</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
-
                     <Button type="submit">{loading ? <span>Loading...</span> : <span>Submit</span>}</Button>
                 </form>
             </Form>
