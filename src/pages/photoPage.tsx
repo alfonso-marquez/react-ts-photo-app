@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type SetStateAction } from "react";
 import AddPhotoDialog from "@/components/photos/addPhotoDialog";
-import { PHOTO_API } from "@/services/api";
+import { fetchPhotosApi } from "@/services/api";
 import EditPhotoDialog from "@/components/photos/editPhotoDialog";
-import type { Photo } from "@/components/types/photo";
+import type { Photo } from "@/types/photo";
 import DeletePhotoDialog from "@/components/photos/deletePhotoDialog";
 import PaginationPhoto from "@/components/photos/paginationPhoto";
 import SearchBar from "@/components/photos/searchBarPhoto";
+import ViewPhotoDialog from "@/components/photos/viewPhotoDialog";
+import { set } from "date-fns";
 
 export default function PhotosPage() {
 
@@ -22,19 +24,10 @@ export default function PhotosPage() {
 
 
     // Fetch photos with pagination
-    const fetchPhotos = async (page: number = 1, query: string = "") => {
-        let url = `${PHOTO_API.list}?page=${page}`;
-        if (query) {
-            url += `&search=${encodeURIComponent(query)}`;
-        }
+    const fetchPhotos = async (page = 1, query = "") => {
 
-        const response = await fetch(url);
-        const resData = await response.json();
-
-        const pageData = resData.data;
-
+        const pageData = await fetchPhotosApi(page, query);
         setPhotos(pageData.data);
-        // setFilteredPhotos(pageData.data); // initial sync
         setPagination({
             current_page: pageData.current_page,
             last_page: pageData.last_page,
@@ -47,10 +40,6 @@ export default function PhotosPage() {
     useEffect(() => {
         fetchPhotos(1, searchTerm); // always reset to page 1 when searching
     }, []);
-
-    // useEffect(() => {
-    //     fetchPhotos(1, searchTerm); // always reset to page 1 when searching
-    // }, []);
 
     // Handle search (server-driven)
     const handleSearch = (query: string) => {
@@ -69,7 +58,7 @@ export default function PhotosPage() {
                 <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                     <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                         <tr>
-                            <th scope="col" className="px-6 py-3">ID</th>
+                            {/* <th scope="col" className="px-6 py-3">ID</th> */}
                             <th scope="col" className="px-6 py-3">Image</th>
                             <th scope="col" className="px-6 py-3">Title</th>
                             <th scope="col" className="px-6 py-3">Category</th>
@@ -87,7 +76,7 @@ export default function PhotosPage() {
                         {/* changed photos to filteredPhotos */}
                         {photos.map((photo: Photo) => (
                             <tr className="hover:bg-gray-50 dark:hover:bg-gray-100" key={photo.id}>
-                                <td className="px-6 py-4">{photo.id}</td>
+                                {/* <td className="px-6 py-4">{photo.id}</td> */}
 
                                 <td className="px-3 py-2">
                                     {photo.photo_path ?
@@ -111,7 +100,8 @@ export default function PhotosPage() {
 
                                 <td className="px-6 py-8 text-right flex gap-2">
                                     {/* <a href="#" className="font-medium text-blue-600 dark:text-blue-500 hover:underline">Edit</a> */}
-                                    <EditPhotoDialog />
+                                    <ViewPhotoDialog photo={photo} />
+                                    <EditPhotoDialog photo={photo} setPhotos={setPhotos} />
                                     <DeletePhotoDialog photo={photo} setPhotos={setPhotos}></DeletePhotoDialog>
                                 </td>
                             </tr>
@@ -119,7 +109,7 @@ export default function PhotosPage() {
                     </tbody>
                 </table>
                 <div className="flex w-full mb-6 justify-end mt-5">
-                    <PaginationPhoto pagination={pagination} links={pagination.links} onPageChange={(page) => fetchPhotos(page, searchTerm)} ></PaginationPhoto>
+                    <PaginationPhoto pagination={pagination} onPageChange={(page) => fetchPhotos(page, searchTerm)} ></PaginationPhoto>
                 </div>
 
             </div>

@@ -1,9 +1,8 @@
 
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "../ui/button";
-import type { Photo } from "../types/photo";
-import { PHOTO_API } from "@/services/api";
-import { set } from "zod";
+import type { Photo } from "../../types/photo";
+import { deletePhotoApi, PHOTO_API } from "@/services/api";
 import { useState } from "react";
 
 
@@ -14,25 +13,30 @@ interface DeletePhotoDialogProps {
 export default function DeletePhotoDialog({ photo, setPhotos }: DeletePhotoDialogProps) {
 
     const [loading, setLoading] = useState(false);
+
     const handleDelete = async () => {
+        if (!photo?.id) {
+            alert("Photo ID is required");
+            return;
+        }
 
         setLoading(true);
         try {
-            const res = await fetch(`${PHOTO_API.list}/${photo.id}`, {
-                method: "DELETE",
-            });
+            const result = await deletePhotoApi(photo.id);
 
-            const data = await res.json();
-            if (res.ok) {
-                // remove from local state
-                setPhotos(prev => prev.filter(p => p.id !== photo.id));
-                setLoading(false);
+            if (!result.success) {
+                alert(result.message);
+
             } else {
-                alert(data.message || "Failed to delete photo");
+                // Remove from local state
+                setPhotos(prev => prev.filter(p => p.id !== photo.id));
             }
-        } catch (error) {
-            console.error(error);
-            alert("An error occurred");
+
+        } catch (error: any) {
+            console.error("Delete error:", error);
+            alert(error.message || "An error occurred");
+        } finally {
+            setLoading(false);
         }
     };
 
