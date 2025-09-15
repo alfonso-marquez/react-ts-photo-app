@@ -131,8 +131,8 @@ export default function AddPhotoDialog({ setPhotos, fetchPhotos }: AddPhotoDialo
     };
 
     return (<Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild><Button variant="default">Add</Button></DialogTrigger>
-        <DialogContent>
+        <DialogTrigger asChild><Button className="bg-green-500 hover:bg-green-600 p-5">Add Photo</Button></DialogTrigger>
+        <DialogContent className={"overflow-y-auto max-h-screen"}>
             <DialogHeader>
                 <DialogTitle>Create Photo</DialogTitle>
                 <DialogDescription>
@@ -177,7 +177,7 @@ export default function AddPhotoDialog({ setPhotos, fetchPhotos }: AddPhotoDialo
                         )}
                     />
                     <div className="grid grid-cols-2 gap-4 mt-4">
-                        <div >
+                        <div>
                             <FormField
                                 control={form.control}
                                 name="photo_category"
@@ -256,6 +256,19 @@ export default function AddPhotoDialog({ setPhotos, fetchPhotos }: AddPhotoDialo
                                 <FormDescription>
                                     Gears/Accessories used.
                                 </FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="location"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Location</FormLabel>
+                                <FormControl>
+                                    <Input {...field} />
+                                </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}

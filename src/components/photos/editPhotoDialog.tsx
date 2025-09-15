@@ -25,6 +25,7 @@ import { Calendar } from "../ui/calendar";
 import { format } from "date-fns";
 import { updatePhotoApi } from "@/services/api";
 import { getPhotoUrl } from "@/helper/getPhotoUrl";
+import { useEffect } from "react";
 
 interface EditPhotoDialogProps {
     photo: Photo;
@@ -45,6 +46,7 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
         title: z.string().min(5, { message: "Title must be at least 5 characters" }),
         description: z.any().optional(),
         camera_brand: z.string().optional(),
+        photo_category: z.string().optional(),
         gear_used: z.any().optional(),
         location: z.any().optional(),
         photo_taken: noFutureDateString.optional(),
@@ -65,6 +67,7 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
             title: photo.title || "",
             description: photo.description || "",
             camera_brand: photo.camera_brand || "",
+            photo_category: photo.photo_category || "",
             gear_used: photo.gear_used || "",
             location: photo.location || "",
             photo_taken: photo.photo_taken || "",
@@ -79,13 +82,13 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
             return;
         }
 
-
         setLoading(true);
         try {
             const formData = new FormData();
             formData.append("title", values.title);
             formData.append("description", values.description ?? "");
             formData.append("camera_brand", values.camera_brand ?? "");
+            formData.append("photo_category", values.photo_category ?? "");
             formData.append("gear_used", values.gear_used ?? "");
             formData.append("location", values.location ?? "");
             formData.append("photo_taken", values.photo_taken ?? "");
@@ -100,11 +103,19 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
             const result = await updatePhotoApi(photo.id, formData);
 
             if (!result.success) {
-                alert(result.message); // show error
-            } else if (result.data && result.data.id) {
+                alert(result.message);
+                return;
+            }
+
+            if (result.data && result.data.id) {
+                // Immutable update to photos
                 setPhotos(prev =>
-                    prev.map(p => (p.id === result.data.id ? result.data : p))
+                    prev.map(p =>
+                        p.id === result.data.id ? { ...result.data } : p
+                    )
                 );
+                // filteredPhotos will sync automatically via your useEffect\
+                setPreview(result.data.photo_path); // must be the path returned by Laravel
             }
             form.reset();
             setOpen(false);
@@ -115,18 +126,32 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
         }
     };
 
+    useEffect(() => {
+        if (photo) {
+            form.reset({
+                title: photo.title,
+                description: photo.description,
+                photo_category: photo.photo_category,
+                camera_brand: photo.camera_brand,
+                gear_used: photo.gear_used,
+                location: photo.location,
+                photo_taken: photo.photo_taken,
+            });
+        }
+    }, [photo]);
+
     return (<Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild><Button variant="outline">Edit</Button></DialogTrigger>
         <DialogContent className={"overflow-y-auto max-h-screen"}>
             <DialogHeader>
-                <DialogTitle>Upload Photo</DialogTitle>
+                <DialogTitle>Update Photo Details</DialogTitle>
                 <DialogDescription>
-                    Create and upload a new photo and add to the list.
+                    Edit and reupload a new photo to the list.
                 </DialogDescription>
             </DialogHeader>
             {preview && (
                 <img
-                    src={getPhotoUrl(preview)}
+                    src={preview.startsWith("blob:") ? preview : getPhotoUrl(preview)}
                     alt={photo.title}
                     className="mt-2 w-full max-h-100 object-cover rounded-md"
                 />
@@ -150,6 +175,7 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
                             </FormItem>
                         )}
                     />
+
                     <FormField
                         control={form.control}
                         name="description"
@@ -166,40 +192,75 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
                             </FormItem>
                         )}
                     />
-                    <FormField
-                        control={form.control}
-                        name="camera_brand"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Camera Brand</FormLabel>
-                                <FormControl>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <SelectTrigger className="w-[180px]">
-                                            <SelectValue placeholder="Canon" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Canon">Canon</SelectItem>
-                                            <SelectItem value="Fujifilm">Fujifilm</SelectItem>
-                                            <SelectItem value="Leica">Leica</SelectItem>
-                                            <SelectItem value="Nikon">Nikon</SelectItem>
-                                            <SelectItem value="Olympus">Olympus</SelectItem>
-                                            <SelectItem value="Panasonic">Panasonic</SelectItem>
-                                            <SelectItem value="Sony">Sony</SelectItem>
-                                            <SelectItem value="Mobile">Mobile</SelectItem>
-                                            <SelectItem value="Other">Other</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </FormControl>
-                                <FormDescription>
-                                    Select 'Mobile' if photo taken from mobile and 'Other' if not listed.
-                                </FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
 
 
-
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                        <div>
+                            <FormField
+                                control={form.control}
+                                name="photo_category"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Category</FormLabel>
+                                        <FormControl>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <SelectTrigger className="w-[180px]">
+                                                    <SelectValue placeholder="Event" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Event">Event</SelectItem>
+                                                    <SelectItem value="Landscape">Landscape</SelectItem>
+                                                    <SelectItem value="Portrait">Portrait</SelectItem>
+                                                    <SelectItem value="Street">Street</SelectItem>
+                                                    <SelectItem value="Toy">Toy</SelectItem>
+                                                    <SelectItem value="Travel">Travel</SelectItem>
+                                                    <SelectItem value="Wildlife">Wildlife</SelectItem>
+                                                    <SelectItem value="Other">Other</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </FormControl>
+                                        <FormDescription>
+                                            Select 'Wildlife' if pets rawr
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div>
+                            <FormField
+                                control={form.control}
+                                name="camera_brand"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Camera Brand</FormLabel>
+                                        <FormControl>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <SelectTrigger className="w-[180px]">
+                                                    <SelectValue placeholder="Canon" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Canon">Canon</SelectItem>
+                                                    <SelectItem value="Fujifilm">Fujifilm</SelectItem>
+                                                    <SelectItem value="Leica">Leica</SelectItem>
+                                                    <SelectItem value="Nikon">Nikon</SelectItem>
+                                                    <SelectItem value="Olympus">Olympus</SelectItem>
+                                                    <SelectItem value="Panasonic">Panasonic</SelectItem>
+                                                    <SelectItem value="Sony">Sony</SelectItem>
+                                                    <SelectItem value="Mobile">Mobile</SelectItem>
+                                                    <SelectItem value="Other">Other</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </FormControl>
+                                        <FormDescription>
+                                            Select 'Other' if not listed.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                    </div>
                     <FormField
                         control={form.control}
                         name="gear_used"
@@ -211,6 +272,22 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
                                 </FormControl>
                                 <FormDescription>
                                     Gears/Accessories used.
+                                </FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="location"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Location</FormLabel>
+                                <FormControl>
+                                    <Input {...field} />
+                                </FormControl>
+                                <FormDescription>
+                                    Location photo was taken.
                                 </FormDescription>
                                 <FormMessage />
                             </FormItem>
@@ -261,10 +338,10 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
                                         accept="image/*"
                                         onChange={(e) => {
                                             const file = e.target.files?.[0];
-                                            field.onChange(file); // store the file in form state
                                             if (file) {
-                                                setPreview(URL.createObjectURL(file)); // update the preview image
-                                                console.log(URL.createObjectURL(file));
+                                                field.onChange(file); // store File object in form state
+                                                const objectUrl = URL.createObjectURL(file);
+                                                setPreview(objectUrl); // set blob URL directly
                                             }
                                         }}
                                     />

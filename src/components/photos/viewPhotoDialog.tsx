@@ -24,7 +24,7 @@ export default function ViewPhotoDialog({ photo }: ViewPhotoDialogProps) {
 
     return (<Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild><Button variant="outline">View</Button></DialogTrigger>
-        <DialogContent>
+        <DialogContent className={"overflow-y-auto max-h-screen"}>
             <DialogHeader>
                 <DialogTitle>View Photo Details</DialogTitle>
                 <DialogDescription>
@@ -53,26 +53,45 @@ export default function ViewPhotoDialog({ photo }: ViewPhotoDialogProps) {
                     <Textarea value={photo.description ?? ""} readOnly />
                 </div>
 
-                <div>
-                    <label className="block font-medium text-sm">Camera Brand</label>
-                    <Select disabled>
-                        <SelectTrigger>
-                            <SelectValue placeholder={photo.camera_brand} />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="Canon">Canon</SelectItem>
-                            <SelectItem value="Fujifilm">Fujifilm</SelectItem>
-                            <SelectItem value="Leica">Leica</SelectItem>
-                            <SelectItem value="Nikon">Nikon</SelectItem>
-                            <SelectItem value="Olympus">Olympus</SelectItem>
-                            <SelectItem value="Panasonic">Panasonic</SelectItem>
-                            <SelectItem value="Sony">Sony</SelectItem>
-                            <SelectItem value="Mobile">Mobile</SelectItem>
-                            <SelectItem value="Other">Other</SelectItem>
-                        </SelectContent>
-                    </Select>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <label className="block font-medium text-sm">Category</label>
+                        <Select disabled>
+                            <SelectTrigger>
+                                <SelectValue placeholder={photo.photo_category} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Event">Event</SelectItem>
+                                <SelectItem value="Landscape">Landscape</SelectItem>
+                                <SelectItem value="Portrait">Portrait</SelectItem>
+                                <SelectItem value="Street">Street</SelectItem>
+                                <SelectItem value="Toy">Toy</SelectItem>
+                                <SelectItem value="Travel">Travel</SelectItem>
+                                <SelectItem value="Wildlife">Wildlife</SelectItem>
+                                <SelectItem value="Other">Other</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div>
+                        <label className="block font-medium text-sm">Camera Brand</label>
+                        <Select disabled>
+                            <SelectTrigger>
+                                <SelectValue placeholder={photo.camera_brand} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Canon">Canon</SelectItem>
+                                <SelectItem value="Fujifilm">Fujifilm</SelectItem>
+                                <SelectItem value="Leica">Leica</SelectItem>
+                                <SelectItem value="Nikon">Nikon</SelectItem>
+                                <SelectItem value="Olympus">Olympus</SelectItem>
+                                <SelectItem value="Panasonic">Panasonic</SelectItem>
+                                <SelectItem value="Sony">Sony</SelectItem>
+                                <SelectItem value="Mobile">Mobile</SelectItem>
+                                <SelectItem value="Other">Other</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
-
                 <div>
                     <label className="block font-medium text-sm">Gear Used</label>
                     <Input value={photo.gear_used ?? ""} readOnly />
@@ -84,7 +103,7 @@ export default function ViewPhotoDialog({ photo }: ViewPhotoDialogProps) {
                 </div>
 
                 <div>
-                    <label className="block font-medium text-sm">Photo Taken</label>
+                    <label className="block font-medium text-sm">Photo Date Taken</label>
                     <Input value={photo.photo_taken ? format(new Date(photo.photo_taken), "yyyy-MM-dd") : ""} readOnly />
                 </div>
 
