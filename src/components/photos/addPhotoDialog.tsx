@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button"
 import {
@@ -26,21 +25,21 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { Upload } from 'lucide-react';
 
 
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { useForm } from "react-hook-form";
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createPhotoApi } from "@/services/api";
 
 import { useState } from "react";
-// import { zodResolver } from "@hookform/resolvers/zod"
 
 import type { Photo } from "../../types/photo";
-import { Textarea } from "../ui/textarea";
 
-
+// Zod Schema for Validation
 const noFutureDateString = z.string().refine(
     (val) => new Date(val) <= new Date(),
     { message: "Date cannot be in the future" }
@@ -48,11 +47,11 @@ const noFutureDateString = z.string().refine(
 
 const formSchema = z.object({
     title: z.string().min(5, { message: "Title must be at least 5 characters" }),
-    description: z.any().optional(),
+    description: z.string().optional(),
     camera_brand: z.string().optional(),
     photo_category: z.string().optional(),
-    gear_used: z.any().optional(),
-    location: z.any().optional(),
+    gear_used: z.string().optional(),
+    location: z.string().optional(),
     photo_taken: noFutureDateString.optional(),
     photo_path: z.instanceof(File, { message: "An image file is required" })
         .refine((file) => file.type.startsWith("image/"), {
@@ -67,14 +66,15 @@ const formSchema = z.object({
 interface AddPhotoDialogProps {
     setPhotos: React.Dispatch<React.SetStateAction<Photo[]>>;
     fetchPhotos: (page?: number, query?: string) => Promise<void>;
+    categories: string[];
+    cameraBrands: string[];
 }
 
 
-export default function AddPhotoDialog({ setPhotos, fetchPhotos }: AddPhotoDialogProps) { //research this!
-
+export default function AddPhotoDialog({ setPhotos, fetchPhotos, categories, cameraBrands }: AddPhotoDialogProps) { //research this!
     const [loading, setLoading] = useState(false);
     const [open, setOpen] = useState(false);
-    // const [date, setDate] = useState<Date>()
+    const [apiError, setApiError] = useState<string | null>(null); // For general API errors
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -91,6 +91,8 @@ export default function AddPhotoDialog({ setPhotos, fetchPhotos }: AddPhotoDialo
 
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         setLoading(true);
+        setApiError(null); // Reset any previous API errors
+
         try {
             // Build FormData for file + text fields
             const formData = new FormData();
@@ -110,35 +112,40 @@ export default function AddPhotoDialog({ setPhotos, fetchPhotos }: AddPhotoDialo
             const result = await createPhotoApi(formData);
 
             if (!result.success) {
-                alert(result.message); // show error
+                setApiError(result.message); // Show API error
             } else if (result.data && result.data.id) {
                 setPhotos((prevPhotos: Photo[]) => [...prevPhotos, result.data]);
             }
-            // refresh list to show new photo (reset to page 1)
+            // Refresh the list to show new photo (reset to page 1)
             await fetchPhotos(1, "");
 
             form.reset();
-
-        } catch (error: any) {
-            alert(error.message || "An error occurred while creating the photo");
-
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                setApiError(error.message || "An error occurred while creating the photo");
+            } else {
+                setApiError("An unknown error occurred");
+            }
         } finally {
             setLoading(false);
             setOpen(false);
         }
-
-        console.log(values);
     };
 
     return (<Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild><Button className="bg-green-500 hover:bg-green-600 p-5">Add Photo</Button></DialogTrigger>
-        <DialogContent className={"overflow-y-auto max-h-screen"}>
+        <DialogTrigger asChild><Button className="bg-green-500 hover:bg-green-600 p-5"><Upload />Photo</Button></DialogTrigger>
+        <DialogContent className="overflow-y-auto max-h-screen">
             <DialogHeader>
                 <DialogTitle>Create Photo</DialogTitle>
                 <DialogDescription>
-                    Create and upload a new photo and add to the list.
+                    Create and upload a new photo and add it to the list.
                 </DialogDescription>
             </DialogHeader>
+
+            {/* Display API Error (if any) */}
+            {apiError && (
+                <div className="text-red-500 font-semibold text-sm mb-4">{apiError}</div>
+            )}
 
             <Form {...form}>
 
@@ -153,9 +160,7 @@ export default function AddPhotoDialog({ setPhotos, fetchPhotos }: AddPhotoDialo
                                 <FormControl>
                                     <Input {...field} />
                                 </FormControl>
-                                <FormDescription>
-                                    Title of uploaded photo (must be at least 5 characters).
-                                </FormDescription>
+                                <FormDescription>Title of uploaded photo (must be at least 5 characters).</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -190,19 +195,14 @@ export default function AddPhotoDialog({ setPhotos, fetchPhotos }: AddPhotoDialo
                                                     <SelectValue placeholder="Event" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="Event">Event</SelectItem>
-                                                    <SelectItem value="Landscape">Landscape</SelectItem>
-                                                    <SelectItem value="Portrait">Portrait</SelectItem>
-                                                    <SelectItem value="Street">Street</SelectItem>
-                                                    <SelectItem value="Toy">Toy</SelectItem>
-                                                    <SelectItem value="Travel">Travel</SelectItem>
-                                                    <SelectItem value="Wildlife">Wildlife</SelectItem>
-                                                    <SelectItem value="Other">Other</SelectItem>
+                                                    {categories.map((category) => (
+                                                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
                                         </FormControl>
                                         <FormDescription>
-                                            Select 'Wildlife' if pets ror
+                                            Select a category
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
@@ -223,20 +223,14 @@ export default function AddPhotoDialog({ setPhotos, fetchPhotos }: AddPhotoDialo
                                                     <SelectValue placeholder="Canon" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="Canon">Canon</SelectItem>
-                                                    <SelectItem value="Fujifilm">Fujifilm</SelectItem>
-                                                    <SelectItem value="Leica">Leica</SelectItem>
-                                                    <SelectItem value="Nikon">Nikon</SelectItem>
-                                                    <SelectItem value="Olympus">Olympus</SelectItem>
-                                                    <SelectItem value="Panasonic">Panasonic</SelectItem>
-                                                    <SelectItem value="Sony">Sony</SelectItem>
-                                                    <SelectItem value="Mobile">Mobile</SelectItem>
-                                                    <SelectItem value="Other">Other</SelectItem>
+                                                    {cameraBrands.map((brand) => (
+                                                        <SelectItem key={brand} value={brand}>{brand}</SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
                                         </FormControl>
                                         <FormDescription>
-                                            Select 'Other' if brand not listed.
+                                            Select a brand or 'Other'
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
@@ -249,7 +243,7 @@ export default function AddPhotoDialog({ setPhotos, fetchPhotos }: AddPhotoDialo
                         name="gear_used"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Gear Used</FormLabel>
+                                <FormLabel>Gears & Accessories Used</FormLabel>
                                 <FormControl>
                                     <Input {...field} />
                                 </FormControl>
@@ -299,7 +293,7 @@ export default function AddPhotoDialog({ setPhotos, fetchPhotos }: AddPhotoDialo
                                         </PopoverContent>
                                     </Popover>
                                 </FormControl>
-                                <FormDescription>Select valid date</FormDescription>
+                                <FormDescription>Select a valid date</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -312,7 +306,6 @@ export default function AddPhotoDialog({ setPhotos, fetchPhotos }: AddPhotoDialo
                                 <FormLabel>Upload Photo</FormLabel>
                                 <FormControl>
                                     <Input
-                                        id="picture"
                                         type="file"
                                         accept="image/*"
                                         onChange={(e) => {
@@ -326,7 +319,9 @@ export default function AddPhotoDialog({ setPhotos, fetchPhotos }: AddPhotoDialo
                             </FormItem>
                         )}
                     />
-                    <Button type="submit">{loading ? <span>Loading...</span> : <span>Submit</span>}</Button>
+                    <Button type="submit" disabled={loading} className="mt-4">
+                        {loading ? <span>Loading...</span> : <span>Submit</span>}
+                    </Button>
                 </form>
             </Form>
 

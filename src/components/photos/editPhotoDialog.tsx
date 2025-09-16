@@ -2,8 +2,8 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "../ui/button";
 import type { Photo } from "@/types/photo";
-import { useState } from "react";
-
+import { useState, useEffect } from "react";
+import { Pencil } from "lucide-react";
 import {
     Form,
     FormControl,
@@ -12,10 +12,10 @@ import {
     FormItem,
     FormLabel,
     FormMessage,
-} from "@/components/ui/form"
+} from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod"
+import { z } from "zod";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
@@ -25,18 +25,21 @@ import { Calendar } from "../ui/calendar";
 import { format } from "date-fns";
 import { updatePhotoApi } from "@/services/api";
 import { getPhotoUrl } from "@/helper/getPhotoUrl";
-import { useEffect } from "react";
 
 interface EditPhotoDialogProps {
     photo: Photo;
     setPhotos: React.Dispatch<React.SetStateAction<Photo[]>>;
+    categories: string[];
+    cameraBrands: string[];
 }
 
-export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogProps) {
+export default function EditPhotoDialog({ photo, setPhotos, categories, cameraBrands }: EditPhotoDialogProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [preview, setPreview] = useState<string | undefined>(photo.photo_path ? getPhotoUrl(photo.photo_path) : undefined);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null); // Error handling state
 
+    // Zod schema for validation
     const noFutureDateString = z.string().refine(
         (val) => new Date(val) <= new Date(),
         { message: "Date cannot be in the future" }
@@ -78,11 +81,12 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
     const handleSubmit = async (values: z.infer<typeof formSchema>) => {
 
         if (!photo?.id) {
-            alert("Photo ID is required");
+            setErrorMessage("Photo ID is required");
             return;
         }
 
         setLoading(true);
+        setErrorMessage(null); // Reset error state
         try {
             const formData = new FormData();
             formData.append("title", values.title);
@@ -103,7 +107,7 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
             const result = await updatePhotoApi(photo.id, formData);
 
             if (!result.success) {
-                alert(result.message);
+                setErrorMessage(result.message);
                 return;
             }
 
@@ -114,13 +118,17 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
                         p.id === result.data.id ? { ...result.data } : p
                     )
                 );
-                // filteredPhotos will sync automatically via your useEffect\
-                setPreview(result.data.photo_path); // must be the path returned by Laravel
+                // filteredPhotos will sync automatically via your useEffect
+                setPreview(result.data.photo_path); // Updated photo preview
             }
             form.reset();
             setOpen(false);
-        } catch (error: any) {
-            alert(error.message || "An error occurred while updating the photo");
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                setErrorMessage(error.message || "An error occurred while updating the photo");
+            } else {
+                setErrorMessage("An unknown error occurred");
+            }
         } finally {
             setLoading(false);
         }
@@ -138,10 +146,10 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
                 photo_taken: photo.photo_taken,
             });
         }
-    }, [photo]);
+    }, [form, photo]);
 
     return (<Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild><Button variant="outline">Edit</Button></DialogTrigger>
+        <DialogTrigger asChild><Button variant="outline"><Pencil /></Button></DialogTrigger>
         <DialogContent className={"overflow-y-auto max-h-screen"}>
             <DialogHeader>
                 <DialogTitle>Update Photo Details</DialogTitle>
@@ -156,6 +164,14 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
                     className="mt-2 w-full max-h-100 object-cover rounded-md"
                 />
             )}
+
+            {/* Show error message if any */}
+            {errorMessage && (
+                <div className="text-red-500 mt-4">
+                    <strong>{errorMessage}</strong>
+                </div>
+            )}
+
             <Form {...form}>
 
                 <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
@@ -169,7 +185,7 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
                                     <Input {...field} />
                                 </FormControl>
                                 <FormDescription>
-                                    Title of uploaded photo (must be at least 5 characters).
+                                    Title of the uploaded photo (min 5 characters)
                                 </FormDescription>
                                 <FormMessage />
                             </FormItem>
@@ -186,7 +202,7 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
                                     <Textarea  {...field} />
                                 </FormControl>
                                 <FormDescription>
-                                    Description of uploaded photo.
+                                    Description of the uploaded photo
                                 </FormDescription>
                                 <FormMessage />
                             </FormItem>
@@ -203,24 +219,19 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
                                     <FormItem>
                                         <FormLabel>Category</FormLabel>
                                         <FormControl>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <SelectTrigger className="w-[180px]">
+                                            <Select value={field.value} onValueChange={field.onChange}>
+                                                <SelectTrigger>
                                                     <SelectValue placeholder="Event" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="Event">Event</SelectItem>
-                                                    <SelectItem value="Landscape">Landscape</SelectItem>
-                                                    <SelectItem value="Portrait">Portrait</SelectItem>
-                                                    <SelectItem value="Street">Street</SelectItem>
-                                                    <SelectItem value="Toy">Toy</SelectItem>
-                                                    <SelectItem value="Travel">Travel</SelectItem>
-                                                    <SelectItem value="Wildlife">Wildlife</SelectItem>
-                                                    <SelectItem value="Other">Other</SelectItem>
+                                                    {categories.map((category) => (
+                                                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
                                         </FormControl>
                                         <FormDescription>
-                                            Select 'Wildlife' if pets rawr
+                                            Select the category of the photo
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
@@ -235,25 +246,19 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
                                     <FormItem>
                                         <FormLabel>Camera Brand</FormLabel>
                                         <FormControl>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <SelectTrigger className="w-[180px]">
-                                                    <SelectValue placeholder="Canon" />
+                                            <Select value={field.value} onValueChange={field.onChange}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select Camera Brand" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="Canon">Canon</SelectItem>
-                                                    <SelectItem value="Fujifilm">Fujifilm</SelectItem>
-                                                    <SelectItem value="Leica">Leica</SelectItem>
-                                                    <SelectItem value="Nikon">Nikon</SelectItem>
-                                                    <SelectItem value="Olympus">Olympus</SelectItem>
-                                                    <SelectItem value="Panasonic">Panasonic</SelectItem>
-                                                    <SelectItem value="Sony">Sony</SelectItem>
-                                                    <SelectItem value="Mobile">Mobile</SelectItem>
-                                                    <SelectItem value="Other">Other</SelectItem>
+                                                    {cameraBrands.map((brand) => (
+                                                        <SelectItem key={brand} value={brand}>{brand}</SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
                                         </FormControl>
                                         <FormDescription>
-                                            Select 'Other' if not listed.
+                                            Select your camera brand
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
@@ -266,12 +271,12 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
                         name="gear_used"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Gear Used</FormLabel>
+                                <FormLabel>Gears & Accessories Used</FormLabel>
                                 <FormControl>
                                     <Input {...field} />
                                 </FormControl>
                                 <FormDescription>
-                                    Gears/Accessories used.
+                                    List the gear/accessories used
                                 </FormDescription>
                                 <FormMessage />
                             </FormItem>
@@ -287,7 +292,7 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
                                     <Input {...field} />
                                 </FormControl>
                                 <FormDescription>
-                                    Location photo was taken.
+                                    Where was the photo taken?
                                 </FormDescription>
                                 <FormMessage />
                             </FormItem>
@@ -304,13 +309,12 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
                                         <PopoverTrigger asChild>
                                             <Button
                                                 variant="outline"
-                                                className="data-[empty=true]:text-muted-foreground w-[280px] justify-start text-left font-normal"
-                                            >
+                                                className="w-[280px] justify-start text-left">
                                                 <CalendarIcon />
                                                 {field.value ? format(new Date(field.value), "yyyy-MM-dd") : "Select date"}
                                             </Button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0">
+                                        <PopoverContent>
                                             <Calendar
                                                 mode="single"
                                                 selected={field.value ? new Date(field.value) : undefined}
@@ -319,7 +323,7 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
                                         </PopoverContent>
                                     </Popover>
                                 </FormControl>
-                                <FormDescription>Select valid date</FormDescription>
+                                <FormDescription>Select the date the photo was taken</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -352,13 +356,11 @@ export default function EditPhotoDialog({ photo, setPhotos }: EditPhotoDialogPro
                         )}
                     />
 
-                    <Button type="submit">{loading ? <span>Updating...</span> : <span>Update</span>}</Button>
+                    <Button type="submit" disabled={loading}>
+                        {loading ? <span>Updating...</span> : <span>Update</span>}
+                    </Button>
                 </form>
             </Form>
         </DialogContent>
     </Dialog>);
-}
-
-function setLoading(arg0: boolean) {
-    throw new Error("Function not implemented.");
 }
