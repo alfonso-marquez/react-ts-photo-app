@@ -1,69 +1,75 @@
-# React + TypeScript + Vite
+# 📸 React Photo App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Hobby:** Photography Management App
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+**Frontend:** React+Typescript, Tailwind
 
-## Expanding the ESLint configuration
+**Backend:** Laravel 12(PHP)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+**UI Component:** Shadcn UI
 
-```js
-export default tseslint.config([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
+**Form Validation :** Zod + React Hook Form
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+## Installation
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+1. Clone this repo:
+
+```
+git clone https://github.com/alfonso-marquez/react-ts-photo-app.git
+cd react-ts-photo-app
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+2. Install dependencies
 
-```js
-// eslint.config.js
-import reactX from "eslint-plugin-react-x";
-import reactDom from "eslint-plugin-react-dom";
+```
+npm install
+```
 
-export default tseslint.config([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs["recommended-typescript"],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+3. Start Development Server
+
+```
+npm run dev
+```
+
+## Features
+
+- Light/dark mode toggle
+- Live previews
+- Fullscreen mode
+- Cross platform
+
+## CRUD Operations
+
+Create Photo
+
+- Upload a photo with title, description, and gear used, etc
+
+- Read / View Photos
+
+- Display all photos in a table with pagination.
+
+- Update Photo
+
+- Edit photo details or replace the image.
+
+- Delete Photo with confirmation
+
+## Filtering & Sorting
+
+- Client-Side Filtering
+
+- Server-Side Filtering
+
+## Third-Party Integration
+
+Used https://thecatapi.com/ on the backend
+
+## Running Tests
+
+To run tests, run the following command
+
+```bash
+  npm run test
 ```
