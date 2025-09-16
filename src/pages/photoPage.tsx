@@ -27,7 +27,7 @@ export default function PhotosPage() {
 
     // Fetch photos with pagination
     const fetchPhotos = async (page = 1, query = "") => {
-        const pageData = await fetchPhotosApi(page, query);
+        const { pageData } = await fetchPhotosApi(page, query);
 
         if (!pageData) return;
         setPhotos(pageData.data);
@@ -55,7 +55,7 @@ export default function PhotosPage() {
     };
 
     // Filter photos based on current filters
-    const filteredPhotos = photos.filter((photo) => {
+    const filteredPhotos = photos?.filter((photo) => {
         const matchesCategory = categoryFilter ? photo.photo_category === categoryFilter : true;
         const matchesCameraBrand = cameraBrandFilter ? photo.camera_brand === cameraBrandFilter : true;
         return matchesCategory && matchesCameraBrand;

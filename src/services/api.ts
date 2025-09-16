@@ -12,17 +12,29 @@ export const PHOTO_API = {
 // Fetch photos with pagination + search
 export const fetchPhotosApi = async (page: number = 1, query: string = "") => {
   let url = `${PHOTO_API.list}?page=${page}`;
-  if (query) {
-    url += `&search=${encodeURIComponent(query)}`;
-  }
+  let errorMsg;
 
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error("Failed to fetch photos");
-  }
+  try {
+    if (query) {
+      url += `&search=${encodeURIComponent(query)}`;
+    }
+    const response = await fetch(url);
+    if (!response.ok) {
+      errorMsg = "Failed to fetch photos";
+      throw new Error(errorMsg);
+    }
 
-  const resData = await response.json();
-  return resData.data; // only return data
+    const resData = await response.json();
+    return {
+      pageData: resData.data,
+      errorMsg,
+    };
+  } catch (e: any) {
+    return {
+      pageData: null,
+      errorMsg: e.message || "An unexpected error occurred.",
+    };
+  }
 };
 
 //Create photo
