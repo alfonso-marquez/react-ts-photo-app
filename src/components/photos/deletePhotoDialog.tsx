@@ -17,10 +17,12 @@ import { Trash } from "lucide-react";
 interface DeletePhotoDialogProps {
   photo: Photo;
   setPhotos: React.Dispatch<React.SetStateAction<Photo[]>>;
+  fetchPhotos: (page?: number, query?: string) => Promise<void>;
 }
 export default function DeletePhotoDialog({
   photo,
   setPhotos,
+  fetchPhotos,
 }: DeletePhotoDialogProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +43,8 @@ export default function DeletePhotoDialog({
       } else {
         // Successfully deleted, update state
         setPhotos((prev) => prev.filter((p) => p.id !== photo.id));
+        // Refresh the list to show new photo (reset to page 1)
+        await fetchPhotos(1, "");
       }
     } catch (error: unknown) {
       if (error instanceof Error) {

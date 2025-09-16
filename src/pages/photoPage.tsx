@@ -166,7 +166,7 @@ export default function PhotosPage() {
                         photo={photo}
                         setPhotos={setPhotos}
                       />
-                      <DeletePhotoDialog photo={photo} setPhotos={setPhotos} />
+                      <DeletePhotoDialog photo={photo} setPhotos={setPhotos} fetchPhotos={fetchPhotos} />
                     </td>
                   </tr>
                 ))

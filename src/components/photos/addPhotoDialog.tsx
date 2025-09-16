@@ -45,6 +45,7 @@ import { useState } from "react";
 
 import type { Photo } from "../../types/photo";
 import { PHOTO_CAMERA_BRANDS, PHOTO_CATEGORIES } from "@/constants/filterOptions";
+import { getPhotoUrl } from "@/helper/getPhotoUrl";
 
 // Zod Schema for Validation
 const noFutureDateString = z
@@ -85,6 +86,7 @@ export default function AddPhotoDialog({
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null); // For general API errors
+  const [preview, setPreview] = useState<string | undefined>();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -165,6 +167,12 @@ export default function AddPhotoDialog({
           <div className="text-red-500 font-semibold text-sm mb-4">
             {apiError}
           </div>
+        )}
+        {preview && (
+          <img
+            src={preview.startsWith("blob:") ? preview : getPhotoUrl(preview)}
+            className="mt-2 w-full max-h-100 object-cover rounded-md"
+          />
         )}
 
         <Form {...form}>
@@ -339,11 +347,16 @@ export default function AddPhotoDialog({
                   <FormLabel>Upload Photo</FormLabel>
                   <FormControl>
                     <Input
+                      id="picture"
                       type="file"
                       accept="image/*"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        field.onChange(file); // store the file in form state
+                        if (file) {
+                          field.onChange(file); // store in form state
+                          const objectUrl = URL.createObjectURL(file);
+                          setPreview(objectUrl); // generate preview
+                        }
                       }}
                     />
                   </FormControl>
