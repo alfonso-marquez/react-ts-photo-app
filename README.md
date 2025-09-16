@@ -6,7 +6,7 @@
 
 **Frontend:** React+Typescript, Tailwind
 
-**Backend:** Laravel 12(PHP)
+**Backend:** Laravel 12(PHP) see:https://github.com/alfonso-marquez/performativ-photo-api
 
 **UI Component:** Shadcn UI
 
