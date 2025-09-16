@@ -29,6 +29,7 @@ export const fetchPhotosApi = async (page: number = 1, query: string = "") => {
       pageData: resData.data,
       errorMsg,
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (e: any) {
     return {
       pageData: null,

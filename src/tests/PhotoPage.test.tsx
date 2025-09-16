@@ -1,12 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, vi, expect, beforeEach, type Mock } from "vitest";
 import PhotosPage from "@/pages/photoPage";
-import {
-  fetchPhotosApi,
-  createPhotoApi,
-  updatePhotoApi,
-  deletePhotoApi,
-} from "@/services/api";
+import { fetchPhotosApi, createPhotoApi } from "@/services/api";
 
 // Mock the API
 vi.mock("@/services/api", () => ({
