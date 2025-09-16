@@ -44,6 +44,7 @@ import { createPhotoApi } from "@/services/api";
 import { useState } from "react";
 
 import type { Photo } from "../../types/photo";
+import { PHOTO_CAMERA_BRANDS, PHOTO_CATEGORIES } from "@/constants/filterOptions";
 
 // Zod Schema for Validation
 const noFutureDateString = z
@@ -74,15 +75,11 @@ const formSchema = z.object({
 interface AddPhotoDialogProps {
   setPhotos: React.Dispatch<React.SetStateAction<Photo[]>>;
   fetchPhotos: (page?: number, query?: string) => Promise<void>;
-  categories: string[];
-  cameraBrands: string[];
 }
 
 export default function AddPhotoDialog({
   setPhotos,
   fetchPhotos,
-  categories,
-  cameraBrands,
 }: AddPhotoDialogProps) {
   //research this!
   const [loading, setLoading] = useState(false);
@@ -221,7 +218,7 @@ export default function AddPhotoDialog({
                             <SelectValue placeholder="Event" />
                           </SelectTrigger>
                           <SelectContent>
-                            {categories.map((category) => (
+                            {PHOTO_CATEGORIES.map((category) => (
                               <SelectItem key={category} value={category}>
                                 {category}
                               </SelectItem>
@@ -251,7 +248,7 @@ export default function AddPhotoDialog({
                             <SelectValue placeholder="Canon" />
                           </SelectTrigger>
                           <SelectContent>
-                            {cameraBrands.map((brand) => (
+                            {PHOTO_CAMERA_BRANDS.map((brand) => (
                               <SelectItem key={brand} value={brand}>
                                 {brand}
                               </SelectItem>

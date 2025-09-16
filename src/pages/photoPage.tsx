@@ -77,12 +77,6 @@ export default function PhotosPage() {
           <AddPhotoDialog
             setPhotos={setPhotos}
             fetchPhotos={fetchPhotos}
-            categories={[
-              ...new Set(photos.map((photo) => photo.photo_category)),
-            ]}
-            cameraBrands={[
-              ...new Set(photos.map((photo) => photo.camera_brand)),
-            ]}
           />
         </div>
 
@@ -152,8 +146,8 @@ export default function PhotosPage() {
                         }
                         alt={`Photo titled ${photo.title}`}
                         onError={(e) =>
-                          (e.currentTarget.src =
-                            "https://placehold.co/600x400.png")
+                        (e.currentTarget.src =
+                          "https://placehold.co/600x400.png")
                         }
                       />
                     </td>
@@ -171,14 +165,6 @@ export default function PhotosPage() {
                       <EditPhotoDialog
                         photo={photo}
                         setPhotos={setPhotos}
-                        categories={[
-                          ...new Set(
-                            photos.map((photo) => photo.photo_category),
-                          ),
-                        ]}
-                        cameraBrands={[
-                          ...new Set(photos.map((photo) => photo.camera_brand)),
-                        ]}
                       />
                       <DeletePhotoDialog photo={photo} setPhotos={setPhotos} />
                     </td>

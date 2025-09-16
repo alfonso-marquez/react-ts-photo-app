@@ -37,19 +37,16 @@ import { Calendar } from "../ui/calendar";
 import { format } from "date-fns";
 import { updatePhotoApi } from "@/services/api";
 import { getPhotoUrl } from "@/helper/getPhotoUrl";
+import { PHOTO_CAMERA_BRANDS, PHOTO_CATEGORIES } from "@/constants/filterOptions";
 
 interface EditPhotoDialogProps {
   photo: Photo;
   setPhotos: React.Dispatch<React.SetStateAction<Photo[]>>;
-  categories: string[];
-  cameraBrands: string[];
 }
 
 export default function EditPhotoDialog({
   photo,
   setPhotos,
-  categories,
-  cameraBrands,
 }: EditPhotoDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -254,7 +251,7 @@ export default function EditPhotoDialog({
                             <SelectValue placeholder="Event" />
                           </SelectTrigger>
                           <SelectContent>
-                            {categories.map((category) => (
+                            {PHOTO_CATEGORIES.map((category) => (
                               <SelectItem key={category} value={category}>
                                 {category}
                               </SelectItem>
@@ -286,7 +283,7 @@ export default function EditPhotoDialog({
                             <SelectValue placeholder="Select Camera Brand" />
                           </SelectTrigger>
                           <SelectContent>
-                            {cameraBrands.map((brand) => (
+                            {PHOTO_CAMERA_BRANDS.map((brand) => (
                               <SelectItem key={brand} value={brand}>
                                 {brand}
                               </SelectItem>
