@@ -33,13 +33,6 @@ npm install
 npm run dev
 ```
 
-## Features
-
-- Light/dark mode toggle
-- Live previews
-- Fullscreen mode
-- Cross platform
-
 ## CRUD Operations
 
 Create Photo
